@@ -52,10 +52,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (!user) throw new UnauthorizedException('Kredensial salah');
+    if (!user) throw new UnauthorizedException('Username tidak ditemukan');
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Kredensial salah');
+    if (!isPasswordValid) throw new UnauthorizedException('Password salah');
 
     const payload = { sub: user.id, email: user.email };
     const token = await this.jwtService.signAsync(payload);

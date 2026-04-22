@@ -6,22 +6,38 @@ import {
   Patch,
   Param,
   Delete,
+  Headers,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 
+interface RequestWithUser extends Request {
+  user: {
+    userId: string;
+    email: string;
+  };
+}
 @ApiTags('Product')
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
-  @UseGuards(JwtAuthGuard)
+
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  async create(@Body() createProductDto: CreateProductDto) {
-    const result = await this.productService.create(createProductDto);
+  async create(
+    @Req()
+    req: RequestWithUser,
+    @Body() createProductDto: CreateProductDto,
+  ) {
+    const result = await this.productService.create(
+      createProductDto,
+      req.user.userId,
+    );
 
     if (!result) {
       return {
@@ -42,8 +58,8 @@ export class ProductController {
 
   @Get()
   async findAll() {
-    const products = await this.productService.findAll();
-    if (!products) {
+    const product = await this.productService.findAll();
+    if (!product) {
       return {
         data: null,
         message: 'Produk tidak ditemukan',
@@ -52,8 +68,23 @@ export class ProductController {
       };
     }
     return {
-      data: products,
+      data: product,
       message: 'Produk berhasil ditemukan',
+      success: true,
+      statusCode: 200,
+    };
+  }
+  @UseGuards(AuthGuard('jwt'))
+  @Get('my-product') // Endpoint: GET /product/my-products
+  async getMyProducts(@Req() req: RequestWithUser) {
+    // userId diambil dari token yang sudah divalidasi oleh JwtStrategy
+    const userId = req.user.userId;
+
+    const product = await this.productService.findMyProducts(userId);
+
+    return {
+      data: product,
+      message: 'Berhasil mengambil daftar produk Anda',
       success: true,
       statusCode: 200,
     };
