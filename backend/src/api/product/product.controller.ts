@@ -9,12 +9,18 @@ import {
   Headers,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { QueryProductDto } from './dto/query-product.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/oles.guard';
+import { CurrentUser, JwtUser } from 'src/common/decorator/get-user.decorator';
+import { Role } from 'generated/prisma/enums';
+import { Roles } from 'src/common/decorator/roles.decorator';
 
 interface RequestWithUser extends Request {
   user: {
@@ -27,16 +33,47 @@ interface RequestWithUser extends Request {
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  // =========================
+  // PUBLIC
+  // =========================
+
+  @Get()
+  async findPublic(@Query() query: QueryProductDto) {
+    const data = await this.productService.findPublic(query);
+
+    return {
+      success: true,
+      message: 'Berhasil mengambil daftar produk publik',
+      data,
+    };
+  }
+
+  @Get(':slug')
+  async findPublicBySlug(@Param('slug') slug: string) {
+    const data = await this.productService.findPublicBySlug(slug);
+
+    return {
+      success: true,
+      message: 'Berhasil mengambil detail produk',
+      data,
+    };
+  }
+
+  // =========================
+  // SELLER / ADMIN
+  // =========================
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post()
   async create(
     @Req()
     req: RequestWithUser,
     @Body() createProductDto: CreateProductDto,
+    @CurrentUser() user: JwtUser,
   ) {
     const result = await this.productService.create(
       createProductDto,
-      req.user.userId,
+      user.sub,
+      user.role as Role,
     );
 
     if (!result) {
@@ -56,9 +93,14 @@ export class ProductController {
     };
   }
 
-  @Get()
-  async findAll() {
-    const product = await this.productService.findAll();
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
+  @Get('seller/me')
+  async findMine(@CurrentUser() user: JwtUser) {
+    const product = await this.productService.findMine(
+      user.sub,
+      user.role as Role,
+    );
     if (!product) {
       return {
         data: null,
@@ -74,13 +116,18 @@ export class ProductController {
       statusCode: 200,
     };
   }
-  @UseGuards(AuthGuard('jwt'))
-  @Get('my-product') // Endpoint: GET /product/my-products
-  async getMyProducts(@Req() req: RequestWithUser) {
-    // userId diambil dari token yang sudah divalidasi oleh JwtStrategy
-    const userId = req.user.userId;
 
-    const product = await this.productService.findMyProducts(userId);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
+  @Get('seller/me/:id') // Endpoint: GET /product/my-products
+  async findMineById(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    // userId diambil dari token yang sudah divalidasi oleh JwtStrategy
+
+    const product = await this.productService.findMineById(
+      id,
+      user.sub,
+      user.role as Role,
+    );
 
     return {
       data: product,
@@ -90,21 +137,76 @@ export class ProductController {
     };
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
-  }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateProductDto: UpdateProductDto,
+    @Body() dto: UpdateProductDto,
+    @CurrentUser() user: JwtUser,
   ) {
-    return await this.productService.update(id, updateProductDto);
+    const data = await this.productService.update(
+      id,
+      dto,
+      user.sub,
+      user.role as Role,
+    );
+
+    return {
+      success: true,
+      message: 'Produk berhasil diperbarui',
+      data,
+    };
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
+  @Patch(':id/publish')
+  async publish(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    const data = await this.productService.publish(
+      id,
+      user.sub,
+      user.role as Role,
+    );
+
+    return {
+      success: true,
+      message: 'Produk berhasil dipublish',
+      data,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
+  @Patch(':id/archive')
+  async archive(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    const data = await this.productService.archive(
+      id,
+      user.sub,
+      user.role as Role,
+    );
+
+    return {
+      success: true,
+      message: 'Produk berhasil diarsipkan',
+      data,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SELLER', 'ADMIN')
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return await this.productService.remove(id);
+  async remove(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    const data = await this.productService.remove(
+      id,
+      user.sub,
+      user.role as Role,
+    );
+
+    return {
+      success: true,
+      message: 'Produk berhasil dihapus',
+      data,
+    };
   }
 }

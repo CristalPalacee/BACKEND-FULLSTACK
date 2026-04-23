@@ -14,15 +14,14 @@ export class PrismaService
 {
   private readonly logger = new Logger(PrismaService.name);
   constructor() {
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is not defined');
+    }
+
     super({
-      adapter: new PrismaMariaDb({
-        host: process.env.DATABASE_HOST,
-        user: process.env.DATABASE_USER,
-        password: process.env.DATABASE_PASSWORD,
-        database: process.env.DATABASE_NAME,
-        connectionLimit: 10,
-        port: Number(process.env.DATABASE_PORT) || 3306,
-      }),
+      adapter: new PrismaMariaDb(databaseUrl),
     });
   }
   async onModuleInit() {

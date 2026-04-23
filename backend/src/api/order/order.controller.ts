@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetUser } from 'src/common/get-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorator/get-user.decorator';
 
 @ApiTags('Order')
 @Controller('order')
@@ -13,7 +13,7 @@ export class OrderController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async checkout(
-    @GetUser('userId') userId: string,
+    @CurrentUser('userId') userId: string,
     @Body() createOrderDto: CreateOrderDto,
   ) {
     // Dengan Guard, kita bisa mengambil userId langsung dari token (req.user)

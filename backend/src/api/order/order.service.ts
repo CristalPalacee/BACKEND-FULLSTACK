@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { Prisma } from 'generated/prisma/client';
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
@@ -22,7 +23,8 @@ export class OrderService {
   async createOrder(data: CreateOrderDto) {
     return await this.prisma.$transaction(async (tx) => {
       let totalAmount = 0;
-      const orderItemsData: { productId: string; quantity: number }[] = [];
+      const orderItemsData: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] =
+        [];
 
       for (const item of data.items) {
         // 1. Validate Product & Stock
@@ -50,6 +52,7 @@ export class OrderService {
         orderItemsData.push({
           productId: item.productId,
           quantity: item.quantity,
+          price: product.price,
         });
       }
 

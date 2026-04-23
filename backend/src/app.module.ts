@@ -7,6 +7,8 @@ import { OrderModule } from './api/order/order.module';
 import { AuthModule } from './api/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { PaymentModule } from './payment/payment.module';
+import { CategoryModule } from './api/category/category.module';
+import { UsersModule } from './user/user.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,11 +16,13 @@ import { PaymentModule } from './payment/payment.module';
     }),
 
     //  Import Module lainnya //
+    UsersModule,
     PrismaModule,
     ProductModule,
     OrderModule,
     AuthModule,
     PaymentModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

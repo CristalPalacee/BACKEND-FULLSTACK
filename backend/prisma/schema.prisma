@@ -12,48 +12,122 @@ datasource db {
   provider = "mysql"
 }
 
-
-model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  name     String?
-  password String
-  orders   Order[]
-  products Product[]
+enum Role {
+  ADMIN
+  SELLER
+  BUYER
 }
 
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  SOLD
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  password     String
+  role         Role     @default(BUYER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products     Product[]
+  orders       Order[]
+
+  @@index([role])
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+}
 
 model Product {
-  id          String      @id @default(uuid())
-  name        String
-  price       Int
-  stock       Int
-  category    String  
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  orderItems  OrderItem[]
+  id            String        @id @default(uuid())
+  name          String
+  slug          String        @unique
+  description   String        @db.Text
+  price         Int
+  stock         Int           @default(1)
+  status        ProductStatus @default(DRAFT)
 
-  userId      String
-  user        User   @relation(fields: [userId], references: [id])
+  gameTitle     String
+  accountLevel  Int?
+  rank          String?
+  serverRegion  String?
+  loginMethod   String?
+  thumbnailUrl  String?
+  isFeatured    Boolean       @default(false)
+  isPopular     Boolean       @default(false)
 
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  publishedAt   DateTime?
+
+  sellerId      String
+  seller        User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id])
+
+  orderItems    OrderItem[]
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([slug])
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  status     String      @default("PENDING") 
-  total      Int
-  items      OrderItem[]
-  createdAt  DateTime    @default(now())
+  id                 String      @id @default(uuid())
+  userId             String
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status             OrderStatus @default(PENDING)
+  total              Int
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  paymentToken       String?
+  paymentRedirectUrl String?
+  paymentType        String?
+  transactionStatus  String?
+  paymentRawResponse Json?
+
+  items              OrderItem[]
+
+  @@index([userId])
+  @@index([status])
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id           String   @id @default(uuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+
+  quantity     Int      @default(1)
+  price        Int
+
+  @@index([orderId])
+  @@index([productId])
 }
