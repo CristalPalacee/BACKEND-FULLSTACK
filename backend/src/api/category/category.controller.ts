@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -17,6 +17,7 @@ import { RolesGuard } from 'src/common/guards/oles.guard';
 import { Roles } from 'src/common/decorator/roles.decorator';
 
 @ApiTags('Categories')
+@ApiBearerAuth()
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
@@ -72,7 +73,7 @@ export class CategoryController {
   // =========================
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'SELLER')
   @Post()
   async create(@Body() dto: CreateCategoryDto, _user: JwtUser) {
     const data = await this.categoryService.create(dto);
