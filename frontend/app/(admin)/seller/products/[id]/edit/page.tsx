@@ -1,10 +1,7 @@
-  import { cookies } from "next/headers";
   import { notFound } from "next/navigation";
-  import type { Category, Product } from "@/lib/types/product";
   import { ProductForm } from "@/components/admin/products/product-form";
 import { getCategories, getSellerProductById } from "@/app/server/product.action";
 
-  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
 

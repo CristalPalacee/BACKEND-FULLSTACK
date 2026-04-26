@@ -128,10 +128,7 @@ export async function createProductAction(
 /**
  *  UPDATE PRODUCT
  */
-export async function updateProductAction(
-  id: string,
-  input: AccountInput,
-): Promise<ActionResult> {
+export async function updateProductAction(id: string,input: AccountInput,): Promise<ActionResult> {
   const parsed = AccountSchema.safeParse(input);
 
   if (!parsed.success) {

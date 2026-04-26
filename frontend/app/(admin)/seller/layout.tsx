@@ -1,5 +1,5 @@
-import { SellerHeader } from "@/components/layout/seller-header";
-import { SellerSidebar } from "@/components/layout/seller-sidebar";
+import { SellerHeader } from "@/components/admin/layout/seller-header";
+import { SellerSidebar } from "@/components/admin/layout/seller-sidebar";
 import { getServerRole, getServerToken } from "@/lib/helper/auth";
 import { redirect } from "next/navigation";
 
